@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable no-await-in-loop */
 
 module.exports = async ({ github, context, core, got }, baseUrl, routes, number) => {
     if (routes[0] === 'NOROUTE') {
@@ -11,7 +11,7 @@ module.exports = async ({ github, context, core, got }, baseUrl, routes, number)
     });
 
     let com_l = [];
-    let com = `Successfully [generated](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) as following:\n`;
+    let com = `Successfully [generated](${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) as following:\n`;
 
     for (const lks of links) {
         core.info(`testing route:  ${lks}`);
@@ -38,7 +38,7 @@ module.exports = async ({ github, context, core, got }, baseUrl, routes, number)
 
         let temp_com = `
 <details>
-<summary><a href="${lks}">${lks}</a> - ${success ? 'Success' : '<b>Failed</b>'}</summary>
+<summary><a href="${lks}">${lks}</a> - ${success ? 'Success ✔️' : '<b>Failed ❌</b>'}</summary>
 
 \`\`\`${success ? 'rss' : ''}`;
         temp_com += `
@@ -63,16 +63,18 @@ ${detail.slice(0, 65300 - temp_com.length)}
         com_l = com_l.slice(0, 5);
     }
 
-    await github.rest.issues
-        .addLabels({
-            issue_number: number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            labels: ['Auto: Route Test Complete'],
-        })
-        .catch((e) => {
-            core.warning(e);
-        });
+    if (process.env.PULL_REQUEST) {
+        await github.rest.issues
+            .addLabels({
+                issue_number: number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['Auto: Route Test Complete'],
+            })
+            .catch((e) => {
+                core.warning(e);
+            });
+    }
 
     for (const com_s of com_l) {
         // Intended, one at a time

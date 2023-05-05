@@ -20,6 +20,7 @@ sidebar: auto
 3.  [Redis](https://redis.io/download)
 4.  [Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs)
 5.  [Google App Engine](https://cloud.google.com/appengine/)
+6.  [Fly.io](https://fly.io/)
 
 ## Docker 镜像
 
@@ -184,16 +185,16 @@ $ cd RSSHub
 
 下载完成后，需要安装依赖（开发不要加 `--production` 参数）
 
-使用 `npm`
-
-```bash
-$ npm ci --production
-```
-
-或 `yarn`
+使用 `yarn`
 
 ```bash
 $ yarn install --production
+```
+
+或 `npm`
+
+```bash
+$ npm ci --production
 ```
 
 由于众所周知的原因，在中国使用 `npm` 下载依赖十分缓慢，建议挂一个代理或者考虑使用 [NPM 镜像](https://npm.taobao.org/)
@@ -203,13 +204,13 @@ $ yarn install --production
 然后在 `RSSHub` 文件夹中运行下面的命令就可以启动
 
 ```bash
-$ npm start
+$ yarn start
 ```
 
 或
 
 ```bash
-$ yarn start
+$ npm start
 ```
 
 或使用 [PM2](https://pm2.keymetrics.io/docs/usage/quick-start/)
@@ -231,7 +232,7 @@ $ pm2 start lib/index.js --name rsshub
 Debian:
 
 ```bash
-$ apt install chroium
+$ apt install chromium
 $ echo >> .env
 $ echo 'CHROMIUM_EXECUTABLE_PATH=chromium' >> .env
 ```
@@ -285,11 +286,23 @@ in pkgs.stdenv.mkDerivation {
 }
 ```
 
+## 部署到 Railway
+
+包含自动更新。
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/QxW\_\_f?referralCode=9wT3hc)
+
 ## 部署到 Heroku
 
-### 注意：
+### 注意
 
-未验证支付方式的 heroku 账户每月仅有 550 小时额度（约 23 天），验证支付方式后可达每月 1000 小时。
+::: warning 更新
+
+Heroku [不再](https://blog.heroku.com/next-chapter) 提供免费服务。
+
+:::
+
+~~未验证支付方式的 heroku 账户每月仅有 550 小时额度（约 23 天），验证支付方式后可达每月 1000 小时。~~
 
 ### 一键部署（无自动更新）
 
@@ -297,14 +310,53 @@ in pkgs.stdenv.mkDerivation {
 
 ### 自动更新部署
 
-1.  将 RSSHub [分叉（fork）](https://github.com/login?return_to=%2FDIYgod%2FRSSHub) 到自己的账户下。
+1.  将 RSSHub [分叉（fork）](https://github.com/DIYgod/RSSHub/fork) 到自己的账户下。
 2.  把自己的分叉部署到 Heroku：`https://heroku.com/deploy?template=URL`，其中 `URL` 改为分叉地址 （例如 `https://github.com/USERNAME/RSSHub`)。
 3.  检查 Heroku 设置，随代码库更新自动部署。
 4.  安装 [Pull](https://github.com/apps/pull) 应用，定期将 RSSHub 改动自动同步至你的分叉。
 
-## 部署到 Vercel (Zeit Now)
+## 部署到 Vercel (ZEIT Now)
 
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/DIYgod/RSSHub)
+
+## 部署到 Fly.io
+
+1.  将 RSSHub [分叉（fork）](https://github.com/DIYgod/RSSHub/fork) 到自己的账户下。
+2.  下载分叉的源码
+    ```bash
+    $ git clone https://github.com/<your username>/RSSHub.git
+    $ cd RSSHub
+    ```
+3.  前往 [Fly.io 完成注册](https://fly.io/app/sign-up)，并安装 [`flyctl` CLI](https://fly.io/docs/hands-on/install-flyctl/)。
+4.  运行 `flyctl launch`, 并选择一个唯一的名称和实例地区。
+5.  使用 `flyctl secrets set KEY=VALUE` [对部分模块进行配置](#pei-zhi-bu-fen-rss-mo-kuai-pei-zhi)。
+6.  [配置通过 GitHub Actions 自动部署](https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/)
+7.  安装 [Pull](https://github.com/apps/pull) 应用，定期将 RSSHub 改动自动同步至你的分叉。
+8.  （可选）将自己的域名指向 fly.io 提供的 IPv4 和 IPv6 地址，并在 Certificate 页面添加自有域名
+
+### 配置内置的 Upstash Redis 缓存
+
+在 `RSSHub` 文件夹下运行
+
+```bash
+$ flyctl redis create
+```
+
+来创建一个新的 Redis 数据库，建议选择开启 [eviction](https://redis.io/docs/reference/eviction/)。创建完成后会输出类似于 `redis://default:<password>@<domain>.upstash.io` 的字符串。
+
+再运行
+
+```bash
+$ flyctl secrets set CACHE_TYPE=redis REDIS_URL='<刚才的连接字符串>'
+```
+
+完成在服务器上的配置。
+
+## 部署到 PikaPods
+
+每月只需 1 美元即可运行 RSSHub。包括自动更新和 5 美元的免费起始额度。
+
+[![Run on PikaPods](https://www.pikapods.com/static/run-button.svg)](https://www.pikapods.com/pods?run=rsshub)
 
 ## 部署到 Google App Engine
 
@@ -413,7 +465,9 @@ gcloud app deploy
 
 `REQUEST_TIMEOUT`: 请求超时毫秒数，默认 `3000`
 
-`UA`: 用户代理，默认 `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36`
+`UA`: 用户代理，默认为随机用户代理用户代理（macOS 上的 Chrome）
+
+`NO_RANDOM_UA`: 是否禁用随机用户代理，默认 `null`
 
 ### 跨域请求
 
@@ -499,7 +553,7 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
 
 访问码为 访问密钥 + 路由 共同生成的 md5，例如：
 
-| 访问密钥        | 路由                | 生成过程                                     | 访问码                              |
+| 访问密钥    | 路由              | 生成过程                                 | 访问码                           |
 | ----------- | ----------------- | ---------------------------------------- | -------------------------------- |
 | ILoveRSSHub | /qdaily/column/59 | md5('/qdaily/column/59' + 'ILoveRSSHub') | 0f820530128805ffc10351f22b5fd121 |
 
@@ -509,11 +563,11 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
 
 访问密钥 / 码与黑白名单的访问控制关系如下：
 
-|       | 正确访问密钥 / 码 | 错误访问密钥 / 码 | 无访问密钥 / 码 |
-| ----- | ---------- | ---------- | --------- |
-| 在白名单中 | ✅          | ✅          | ✅         |
-| 在黑名单中 | ✅          | ❌          | ❌         |
-| 无黑白名单 | ✅          | ❌          | ❌         |
+|            | 正确访问密钥 / 码 | 错误访问密钥 / 码 | 无访问密钥 / 码 |
+| ---------- | ----------------- | ----------------- | --------------- |
+| 在白名单中 | ✅                | ✅                | ✅              |
+| 在黑名单中 | ✅                | ❌                | ❌              |
+| 无黑白名单 | ✅                | ❌                | ❌              |
 
 ### 日志配置
 
@@ -529,7 +583,15 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
 
 ### 图片处理
 
-`HOTLINK_TEMPLATE`: 用于处理描述中图片的 URL，绕过防盗链等限制，留空不生效。用法参考 [#2769](https://github.com/DIYgod/RSSHub/issues/2769)。可以使用 [URL](https://developer.mozilla.org/en-US/docs/Web/API/URL#Properties) 的所有属性，格式为 JS 变量模板。例子：`${protocol}//${host}${pathname}`, `https://i3.wp.com/${host}${pathname}`
+::: tip 新配置方式
+
+我们正在试验新的，更灵活的配置方式。如果有需要，请转到 [通用参数 -> 多媒体处理](/parameter.html#duo-mei-ti-chu-li) 了解更多。
+
+在使用新配置时，请将下方环境变量留空。否则默认图片模版会继续遵循下方配置。
+
+:::
+
+`HOTLINK_TEMPLATE`: 用于处理描述中图片的 URL，绕过防盗链等限制，留空不生效。用法参考 [#2769](https://github.com/DIYgod/RSSHub/issues/2769)。可以使用 [URL](https://developer.mozilla.org/en-US/docs/Web/API/URL#Properties) 的所有属性（加上后缀 `_ue` 则会对其进行 URL 编码），格式为 JS 变量模板。例子：`${protocol}//${host}${pathname}`, `https://i3.wp.com/${host}${pathname}`, `https://images.weserv.nl?url=${href_ue}`
 
 `HOTLINK_INCLUDE_PATHS`: 限制需要处理的路由，只有匹配成功的路由会被处理，设置多项时用英文逗号 `,` 隔开。若不设置，则所有路由都将被处理
 
@@ -544,6 +606,20 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
 也可带有路由参数，如 `/weibo/user/2612249974` 也是合法的。
 
 :::
+
+### 功能特性
+
+::: tip 测试特性
+
+这个板块控制的是一些新特性的选项，他们都是**默认关闭**的。如果有需要请阅读对应说明后按需开启
+
+:::
+
+`ALLOW_USER_HOTLINK_TEMPLATE`: [通用参数 -> 多媒体处理](/parameter.html#duo-mei-ti-chu-li)特性控制
+
+`FILTER_REGEX_ENGINE`: 控制 [通用参数 -> 内容过滤](/parameter.html#nei-rong-guo-lu) 使用的正则引擎。可选`[re2, regexp]`，默认`re2`。我们推荐公开实例不要调整这个选项，这个选项目前主要用于向后兼容。
+
+`ALLOW_USER_SUPPLY_UNSAFE_DOMAIN`: 允许用户为路由提供域名作为参数。建议公共实例不要调整此选项，开启后可能会导致 [服务端请求伪造（SSRF）](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)
 
 ### 其他应用配置
 
@@ -607,6 +683,9 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
         4.  找到 <https://webapp.bupt.edu.cn/extensions/wap/news/list.html?p-1&type=xnxw> 请求
         5.  找到请求头中的 Cookie
 
+-   Civitai
+    -   `CIVITAI_COOKIE`: Civitai 登录后的 cookie 值
+
 -   discuz cookies 设定
 
     -   `DISCUZ_COOKIE_{cid}`: 某 Discuz 驱动的论坛，用户注册后的 Cookie 值，cid 可自由设定，取值范围 \[00, 99], 使用 discuz 通用路由时，通过指定 cid 来调用该 cookie
@@ -621,7 +700,16 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
     -   `EH_IPB_PASS_HASH`: E-Hentai 账户登录后 cookie 的 `ipb_pass_hash` 值
     -   `EH_SK`: E-Hentai 账户登录后 cookie 中的`sk`值
     -   `EH_IGNEOUS`: ExHentai 账户登录后 cookie 中的`igneous`值。若设置此值，RSS 数据将全部从里站获取
+    -   `EH_STAR`: E-Hentai 账户获得捐赠等级后将出现该 cookie。若设置此值，图片访问量限制将与账号关联而非 IP 地址
     -   `EH_IMG_PROXY`: 封面代理访问地址。若设置此值，封面图链接将被替换为以此值开头。使用 ExHentai 时，封面图需要有 Cookie 才能访问，在一些阅读软件上没法显示封面，可以使用此值搭配一个加 Cookie 的代理服务器实现阅读软件无 Cookie 获取封面图。
+
+-   Fantia
+
+    -   `FANTIA_COOKIE`: 登录后的 `cookie` , 可以在控制台中查看请求头获取。如果不填会导致部分需要登录后才能阅读的帖子获取异常
+
+-   Gitee 全部路由：[申请地址](https://gitee.com/api/v5/swagger)
+
+    -   `GITEE_ACCESS_TOKEN`: Gitee 私人令牌
 
 -   GitHub 全部路由：[申请地址](https://github.com/settings/tokens)
 
@@ -631,13 +719,19 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
 
     -   `GOOGLE_FONTS_API_KEY`: API key
 
--   Instagram：
+-   Instagram:
 
-    -   `IG_USERNAME`: Instagram 用户名。
-    -   `IG_PASSWORD`: Instagram 密码。
-    -   `IG_PROXY`: Instagram 代理 URL。
+    -   `IG_USERNAME`: Instagram 用户名（仅 Private API）
+    -   `IG_PASSWORD`: Instagram 密码（仅 Private API）
+    -   `IG_PROXY`: Instagram 代理 URL（仅 Private API，可选）
+    -   `IG_COOKIE`: Instagram 登录后的 Cookie（仅 Cookie）
 
     注意，暂**不支持**两步验证。
+
+-   Iwara:
+
+    -   `IWARA_USERNAME`: Iwara 用户名
+    -   `IWARA_PASSWORD`: Iwara 密码
 
 -   Last.fm 全部路由：[申请地址](https://www.last.fm/api/)
 
@@ -659,12 +753,12 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
     -   `NGA_PASSPORT_UID`: 对应 cookie 中的 `ngaPassportUid`.
     -   `NGA_PASSPORT_CID`: 对应 cookie 中的 `ngaPassportCid`.
 
--   nhentai torrent: [注册地址](https://nhentai.net/register/)
+-   nhentai torrent：[注册地址](https://nhentai.net/register/)
 
     -   `NHENTAI_USERNAME`: nhentai 用户名或邮箱
     -   `NHENTAI_PASSWORD`: nhentai 密码
 
--   pianyuan 全部路由： [注册地址](https://pianyuan.org)
+-   pianyuan 全部路由：[注册地址](https://pianyuan.org)
 
     -   `PIANYUAN_COOKIE`: 对应 cookie 中的 `py_loginauth`, 例: PIANYUAN_COOKIE='py_loginauth=xxxxxxxxxx'
 
@@ -674,30 +768,34 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
     -   `PIXIV_BYPASS_CDN`: 绕过 Pixiv 前置的 Cloudflare CDN, 使用`PIXIV_BYPASS_HOSTNAME`指示的 IP 地址访问 Pixiv API, 可以解决因 Cloudflare 机器人验证导致的登录失败问题，默认关闭，设置 true 或 1 开启
     -   `PIXIV_BYPASS_HOSTNAME`: Pixiv 源站的主机名或 IP 地址，主机名会被解析为 IPv4 地址，默认为`public-api.secure.pixiv.net`；仅在`PIXIV_BYPASS_CDN`开启时生效
     -   `PIXIV_BYPASS_DOH`: 用于解析 `PIXIV_BYPASS_HOSTNAME` 的 DoH 端点 URL，需要兼容 Cloudflare 或 Google 的 DoH 服务的 JSON 查询格式，默认为 `https://1.1.1.1/dns-query`
-    -   `PIXIV_IMG_PROXY`: 用于图片地址的代理，因为 pixiv 图片有防盗链，默认为 `https://i.pixiv.cat`
+    -   `PIXIV_IMG_PROXY`: 用于图片地址的代理，因为 pixiv 图片有防盗链，默认为 `https://i.pixiv.re`
 
 -   pixiv fanbox 用于获取付费内容
 
     -   `FANBOX_SESSION_ID`: 对应 cookies 中的`FANBOXSESSID`。
 
+-   Saraba1st 用于获取帖子里的图片
+
+    -   `SARABA1ST_COOKIE`: 对应网页端的 Cookie。
+
 -   Sci-hub 设置，用于科学期刊路由。
 
     -   `SCIHUB_HOST`: 可访问的 sci-hub 镜像地址，默认为 `https://sci-hub.se`。
 
--   spotify 全部路由： [注册地址](https://developer.spotify.com)
+-   Spotify 全部路由：[注册地址](https://developer.spotify.com)
 
-    -   `SPOTIFY_CLIENT_ID`：Spotify 应用的 client ID
-    -   `SPOTIFY_CLIENT_SECRET`：Spotify 应用的 client secret
+    -   `SPOTIFY_CLIENT_ID`: Spotify 应用的 client ID
+    -   `SPOTIFY_CLIENT_SECRET`: Spotify 应用的 client secret
 
--   spotify 用户相关路由
+-   Spotify 用户相关路由
 
     -   `SPOTIFY_REFRESHTOKEN`：用户在此 Spotify 应用的 refresh token。可以利用 [此 gist](https://gist.github.com/outloudvi/d1bbeb5e989db5385384a223a7263744) 获取。
 
--   telegram - 贴纸包路由：[Telegram 机器人](https://telegram.org/blog/bot-revolution)
+-   Telegram - 贴纸包路由：[Telegram 机器人](https://telegram.org/blog/bot-revolution)
 
     -   `TELEGRAM_TOKEN`: Telegram 机器人 token
 
--   twitter 全部路由：[申请地址](https://apps.twitter.com)
+-   Twitter 全部路由：[申请地址](https://apps.twitter.com)
 
     -   `TWITTER_CONSUMER_KEY`: Twitter Developer API key，支持多个 key，用英文逗号 `,` 隔开
     -   `TWITTER_CONSUMER_SECRET`: Twitter Developer API key secret，支持多个 key，用英文逗号 `,` 隔开，顺序与 key 对应
@@ -716,9 +814,18 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
         | <https://cors.netnr.workers.dev/>        | cloudflare   |
         | <https://netnr-proxy.openode.io/>        | digitalocean |
 
--   youtube 全部路由：[申请地址](https://console.developers.google.com/)
+-   YouTube：[申请地址](https://console.developers.google.com/)
 
-    -   `YOUTUBE_KEY`: YouTube API Key，支持多个 key，用英文逗号 `,` 隔开
+    -   全部路由
+        -   `YOUTUBE_KEY`: YouTube API Key，支持多个 key，用英文逗号 `,` 隔开
+    -   订阅列表路由额外设置
+        -   `YOUTUBE_CLIENT_ID`: YouTube API 的 OAuth 2.0 客户端 ID
+        -   `YOUTUBE_CLIENT_SECRET`: YouTube API 的 OAuth 2.0 客户端 Secret
+        -   `YOUTUBE_REFRESH_TOKEN`: YouTube API 的 OAuth 2.0 客户端 Refresh Token。可以按照[此 gist](https://gist.github.com/Kurukshetran/5904e8cb2361623498481f4a9a1338aa) 获取。
+
+-   ZodGame:
+
+    -   `ZODGAME_COOKIE`: ZodGame 登录后的 Cookie 值
 
 -   北大未名 BBS 全站十大
 
@@ -774,10 +881,6 @@ RSSHub 支持使用访问密钥 / 码，白名单和黑名单三种方式进行�
 -   轻小说文库
 
     -   `WENKU8_COOKIE`: 登陆轻小说文库后的 cookie
-
--   语雀 全部路由：[注册地址](https://www.yuque.com/register)
-
-    -   `YUQUE_TOKEN`: 语雀 Token，[获取地址](https://www.yuque.com/settings/tokens)。语雀接口做了访问频率限制，为保证正常访问建议配置 Token，详见 [语雀开发者文档](https://www.yuque.com/yuque/developer/api#5b3a1535)。
 
 -   邮箱 邮件列表路由：
 
